@@ -145,26 +145,23 @@ async function triggerPriceLoad(page) {
   const button = page.locator(SELECTORS.checkPriceButton).first();
   if ((await button.count()) === 0) return; // no such button on this product - fine
 
+  // Key fact: the button starts out with a real HTML `disabled` attribute, and browsers
+  // never deliver hover/click events to a disabled element - no automation trick changes
+  // that. The panel's own hint text ("Hover over the price area...") tells us the enable
+  // logic is listening on the surrounding panel instead, so we hover THAT - a normal,
+  // enabled element - and let it flip the button's disabled state before we click it.
+  const panelBox = await panel.boundingBox();
+  if (!panelBox) return;
+
+  const panelCenterX = panelBox.x + panelBox.width / 2;
+  const panelCenterY = panelBox.y + panelBox.height / 2;
+
   for (let attempt = 1; attempt <= 3; attempt++) {
-    await dismissCookieBanner(page);
-
-    // Key fact: the button starts out with a real HTML `disabled` attribute, and browsers
-    // never deliver hover/click events to a disabled element - no automation trick changes
-    // that. The panel's own hint text ("Hover over the price area...") tells us the enable
-    // logic must be listening on the surrounding panel instead, so we hover THAT - a normal,
-    // enabled element - and let it flip the button's disabled state before we ever touch it.
-    const panelBox = await panel.boundingBox();
-    if (!panelBox) return;
-
-    const panelCenterX = panelBox.x + panelBox.width / 2;
-    const panelCenterY = panelBox.y + panelBox.height / 2;
     await page.mouse.move(panelBox.x + 10, panelBox.y + 10);
     await page.mouse.move(panelCenterX, panelCenterY, { steps: 20 });
     await wait(700);
 
     const stillDisabled = (await button.getAttribute("disabled")) !== null;
-    console.log(`  Debug: button disabled after hovering panel = ${stillDisabled}`);
-
     if (!stillDisabled) {
       const box = await button.boundingBox();
       if (box) {
