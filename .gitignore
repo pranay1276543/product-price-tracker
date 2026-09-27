@@ -1,0 +1,28 @@
+# dependencies
+node_modules/
+
+# env files - never commit real secrets
+.env
+.env.local
+.env.*.local
+
+# build output
+dist/
+build/
+
+# testing / coverage
+coverage/
+
+# logs
+*.log
+npm-debug.log*
+
+# playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/
