@@ -10,11 +10,15 @@ export async function triggerScrape(req, res) {
     return res.status(401).json({ error: "Missing or invalid cron secret." });
   }
 
-  try {
-    const summary = await runScrapeAll({ headed: false });
-    res.json({ message: "Scrape run complete.", summary });
-  } catch (err) {
+  // Respond immediately rather than waiting for the scrape to finish. Scraping several
+  // products - each with its own retries against a deliberately slow/flaky store - can
+  // easily take longer than an external cron service's own request timeout (cron-job.org's
+  // free tier times out around 30s). We acknowledge the trigger right away and let the
+  // actual scrape keep running in the background; results land in Supabase regardless of
+  // whether the caller is still listening for a response.
+  res.status(202).json({ message: "Scrape run started." });
+
+  runScrapeAll({ headed: false }).catch((err) => {
     console.error("Scheduled scrape run crashed:", err.message);
-    res.status(500).json({ error: "Scrape run failed to complete.", details: err.message });
-  }
+  });
 }
